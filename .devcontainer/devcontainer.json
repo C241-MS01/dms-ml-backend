@@ -1,0 +1,27 @@
+{
+	"name": "dms-ml-backend",
+	"image": "mcr.microsoft.com/devcontainers/python:3.12-bullseye",
+	"runArgs": [
+		"--name",
+		"dms-ml-backend_container",
+		"--network=host"
+	],
+	"features": {
+		"ghcr.io/devcontainers/features/common-utils:2": {
+			"configureZshAsDefaultShell": true
+		},
+		"ghcr.io/devcontainers/features/docker-outside-of-docker:1": {}
+	},
+	"postCreateCommand": "pip install -r requirements.txt",
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"VisualStudioExptTeam.vscodeintellicode", // intellisense
+				"waderyan.gitblame", // git blame
+				"oderwat.indent-rainbow", // colorize indentation
+				"davidanson.vscode-markdownlint", // markdown linting
+				"github.copilot" // ai code completion
+			]
+		}
+	}
+}
