@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Document</title>
+		<script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+	</head>
+	<body>
+		<video autoplay />
+	</body>
+	<script>
+		// open camera, stream video to video tag, encode the frame to base64, then publish to video topic
+		const client = mqtt.connect("ws://34.101.43.219:9001");
+		client.on("connect", () => {
+			console.log("connected");
+			navigator.mediaDevices
+				.getUserMedia({ video: { width: 640, height: 480 } })
+				.then((stream) => {
+					const video = document.querySelector("video");
+					video.srcObject = stream;
+					const canvas = document.createElement("canvas");
+					const context = canvas.getContext("2d");
+					video.addEventListener("play", () => {
+						setInterval(() => {
+							canvas.width = video.videoWidth;
+							canvas.height = video.videoHeight;
+							context.drawImage(
+								video,
+								0,
+								0,
+								video.videoWidth,
+								video.videoHeight,
+							);
+							const data = canvas.toDataURL("image/jpeg");
+							const base64 = data.split(",")[1];
+							client.publish("video", base64);
+							console.log(`published ${base64.length} bytes`);
+						}, 1000); // Change the interval to achieve 15fps
+					});
+				});
+		});
+	</script>
+</html>

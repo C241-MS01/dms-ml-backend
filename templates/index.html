@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Document</title>
+		<script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+	</head>
+	<body>
+		<img src="" alt="" />
+	</body>
+
+	<script>
+		// make mqtt client then subscribe to video topic, then display video to img tag
+		const client = mqtt.connect("ws://34.101.43.219:9001");
+		client.on("connect", () => {
+			console.log("connected");
+			client.subscribe("video", (err) => {
+				if (err) {
+					console.error("Failed to subscribe to topic:", err);
+					return;
+				}
+				console.log("subscribed to video topic");
+			});
+		});
+		client.on("message", (topic, message) => {
+			const img = document.querySelector("img");
+			img.src = "data:image/jpeg;base64," + message.toString();
+		});
+	</script>
+</html>

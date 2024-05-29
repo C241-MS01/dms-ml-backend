@@ -1,5 +1,9 @@
 Flask==3.0.3
 Flask-MQTT==1.2.1
+mediapipe==0.10.14
+numpy==1.26.4
+opencv-contrib-python==4.9.0.80
+opencv-python==4.9.0.80
 py-mon==2.0.5
 python-dotenv==1.0.1
 structlog==24.2.0
