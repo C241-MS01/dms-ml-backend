@@ -1,5 +1,6 @@
 from flask import Flask, render_template
 from flask_mqtt import Mqtt
+from face_mesh import FaceRecognizer
 from dotenv import load_dotenv
 from structlog import get_logger
 import os
@@ -13,6 +14,7 @@ app.config["MQTT_BROKER_URL"] = os.getenv("MQTT_BROKER_URL")
 app.config["MQTT_BROKER_PORT"] = int(os.getenv("MQTT_BROKER_PORT"))
 app.logger = get_logger()
 mqtt_client = Mqtt(app)
+face_recognizer = FaceRecognizer()
 
 
 @mqtt_client.on_connect()
@@ -25,13 +27,22 @@ def handle_connect(client, userdata, flags, rc):
         f"Connected to MQTT broker at {app.config['MQTT_BROKER_URL']}:{app.config['MQTT_BROKER_PORT']}"
     )
 
-    mqtt_client.subscribe("video")
-    app.logger.info("Subscribed to topic 'video'")
+    topic = "video/#"
+
+    mqtt_client.subscribe(topic)
+    app.logger.info(f"Subscribed to topic: {topic}")
 
 
 @mqtt_client.on_message()
 def handle_message(client, userdata, message):
-    app.logger.info(f"Received message: {message.payload.decode()}")
+    # check if the payload a valid base64 string
+    try:
+        message.payload.decode("utf-8")
+        face_recognizer.process_frame(message.payload)
+
+    except Exception as e:
+        app.logger.error(e)
+        return
 
 
 # Video stream test
