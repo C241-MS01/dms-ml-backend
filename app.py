@@ -1,6 +1,6 @@
 from flask import Flask, render_template
 from flask_mqtt import Mqtt
-from face_mesh import FaceRecognizer
+from model import Model
 from dotenv import load_dotenv
 from structlog import get_logger
 import os
@@ -14,7 +14,7 @@ app.config["MQTT_BROKER_URL"] = os.getenv("MQTT_BROKER_URL")
 app.config["MQTT_BROKER_PORT"] = int(os.getenv("MQTT_BROKER_PORT"))
 app.logger = get_logger()
 mqtt_client = Mqtt(app)
-face_recognizer = FaceRecognizer()
+ml_model = Model()
 
 
 @mqtt_client.on_connect()
@@ -35,10 +35,9 @@ def handle_connect(client, userdata, flags, rc):
 
 @mqtt_client.on_message()
 def handle_message(client, userdata, message):
-    # check if the payload a valid base64 string
     try:
         message.payload.decode("utf-8")
-        face_recognizer.process_frame(message.payload)
+        ml_model.process_frame(message.payload)
 
     except Exception as e:
         app.logger.error(e)

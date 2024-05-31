@@ -1,9 +1,14 @@
+dill==0.3.8
 Flask==3.0.3
 Flask-MQTT==1.2.1
 mediapipe==0.10.14
 numpy==1.26.4
-opencv-contrib-python-headless==4.9.0.80
-opencv-python-headless==4.9.0.80
+opencv-contrib-python==4.9.0.80
+opencv-python==4.9.0.80
+pandas==2.2.2
 py-mon==2.0.5
 python-dotenv==1.0.1
+requests==2.32.3
+setuptools==70.0.0
 structlog==24.2.0
+torch==2.3.0
