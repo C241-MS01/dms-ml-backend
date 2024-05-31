@@ -3,18 +3,20 @@ from flask_mqtt import Mqtt
 from model import Model
 from dotenv import load_dotenv
 from structlog import get_logger
-import os
+from os import getenv
 
 load_dotenv()
 
 ml_model = Model()
 
 app = Flask(__name__)
-app.config["HTTP_URL"] = os.getenv("HTTP_URL")
-app.config["HTTP_PORT"] = os.getenv("HTTP_PORT")
-app.config["MQTT_BROKER_URL"] = os.getenv("MQTT_BROKER_URL")
-app.config["MQTT_BROKER_PORT"] = int(os.getenv("MQTT_BROKER_PORT"))
 app.logger = get_logger()
+
+app.config["HTTP_URL"] = getenv("HTTP_URL")
+app.config["HTTP_PORT"] = getenv("HTTP_PORT")
+app.config["MQTT_BROKER_URL"] = getenv("MQTT_BROKER_URL")
+app.config["MQTT_BROKER_PORT"] = int(getenv("MQTT_BROKER_PORT"))
+
 mqtt_client = Mqtt(app, connect_async=True)
 
 
@@ -60,7 +62,7 @@ def main():
     app.run(
         host=app.config["HTTP_URL"],
         port=app.config["HTTP_PORT"],
-        debug=True,
+        # debug=True,
     )
 
 

@@ -1,7 +1,7 @@
 import time
 import base64
 import cv2
-import torch
+from torch.hub import load
 import mediapipe as mp
 import numpy as np
 
@@ -10,7 +10,7 @@ class Model:
     def __init__(self):
         # --- PyTorch model for object detection ---
         # load the model
-        self.model = torch.hub.load("ultralytics/yolov5", "custom", path="best.pt")
+        self.model = load("ultralytics/yolov5", "custom", path="best.pt")
 
         # --- Drawing and Create Face Mesh on Face ---
         # drawing on faces
