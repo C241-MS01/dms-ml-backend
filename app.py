@@ -7,14 +7,15 @@ import os
 
 load_dotenv()
 
+ml_model = Model()
+
 app = Flask(__name__)
 app.config["HTTP_URL"] = os.getenv("HTTP_URL")
 app.config["HTTP_PORT"] = os.getenv("HTTP_PORT")
 app.config["MQTT_BROKER_URL"] = os.getenv("MQTT_BROKER_URL")
 app.config["MQTT_BROKER_PORT"] = int(os.getenv("MQTT_BROKER_PORT"))
 app.logger = get_logger()
-mqtt_client = Mqtt(app)
-ml_model = Model()
+mqtt_client = Mqtt(app, connect_async=True)
 
 
 @mqtt_client.on_connect()
@@ -56,7 +57,11 @@ def stream():
 
 
 def main():
-    app.run(host=app.config["HTTP_URL"], port=app.config["HTTP_PORT"])
+    app.run(
+        host=app.config["HTTP_URL"],
+        port=app.config["HTTP_PORT"],
+        debug=True,
+    )
 
 
 if __name__ == "__main__":

@@ -6,7 +6,6 @@ numpy==1.26.4
 opencv-contrib-python==4.9.0.80
 opencv-python==4.9.0.80
 pandas==2.2.2
-py-mon==2.0.5
 python-dotenv==1.0.1
 requests==2.32.3
 setuptools==70.0.0

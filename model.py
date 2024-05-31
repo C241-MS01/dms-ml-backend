@@ -65,6 +65,7 @@ class Model:
         # resize the image frame
         img = cv2.resize(img, (self.width, self.height))
 
+        # Detect object
         detection_result = self.model(img)
         print(detection_result)
 
@@ -73,10 +74,6 @@ class Model:
         img_h, img_w, _ = img.shape
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         results = self.faceMesh.process(img)
-
-        # Detect object
-        detection_result = self.model(img)
-        print(detection_result)
 
         img.flags.writeable = True
         img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
