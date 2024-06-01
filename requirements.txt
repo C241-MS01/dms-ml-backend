@@ -1,7 +1,10 @@
 dill==0.3.8
 Flask==3.0.3
 Flask-MQTT==1.2.1
+google-auth==2.29.0
+google-cloud-storage==2.16.0
 mediapipe==0.10.14
+mysql-connector-python==8.4.0
 numpy==1.26.4
 opencv-contrib-python==4.9.0.80
 opencv-python==4.9.0.80

@@ -1,11 +1,26 @@
 from flask import Flask, render_template
 from flask_mqtt import Mqtt
+from cloud_storage import CloudStorage
+from db import Mysql
 from model import Model
 from dotenv import load_dotenv
 from structlog import get_logger
 from os import getenv
 
 load_dotenv()
+
+storage = CloudStorage(
+    project_id=getenv("GOOGLE_PROJECT_ID"),
+    credentials_path=getenv("GOOGLE_APPLICATION_CREDENTIALS"),
+    bucket_name=getenv("GOOGLE_STORAGE_BUCKET_NAME"),
+)
+
+db = Mysql(
+    host=getenv("MYSQL_HOST"),
+    user=getenv("MYSQL_USER"),
+    password=getenv("MYSQL_PASSWORD"),
+    database=getenv("MYSQL_DATABASE"),
+)
 
 ml_model = Model()
 

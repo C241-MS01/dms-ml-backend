@@ -12,7 +12,8 @@
 		"ghcr.io/devcontainers/features/common-utils:2": {
 			"configureZshAsDefaultShell": true
 		},
-		"ghcr.io/devcontainers/features/docker-outside-of-docker:1": {}
+		"ghcr.io/devcontainers/features/docker-outside-of-docker:1": {},
+		"ghcr.io/dhoeric/features/google-cloud-cli:1": {}
 	},
 	"postCreateCommand": "test -d .venv || (python3 -m venv .venv && . .venv/bin/activate && pip install --upgrade pip && pip install -r requirements.txt)",
 	"customizations": {
