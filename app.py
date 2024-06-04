@@ -1,28 +1,32 @@
-from flask import Flask, render_template
-from flask_mqtt import Mqtt
 from cloud_storage import CloudStorage
 from db import Mysql
-from model import Model
 from dotenv import load_dotenv
-from structlog import get_logger
+from flask import Flask, render_template
+from flask_mqtt import Mqtt
+from model import Model
 from os import getenv
+from structlog import get_logger
+from video import Video
 
 load_dotenv()
 
-storage = CloudStorage(
-    project_id=getenv("GOOGLE_PROJECT_ID"),
-    credentials_path=getenv("GOOGLE_APPLICATION_CREDENTIALS"),
-    bucket_name=getenv("GOOGLE_STORAGE_BUCKET_NAME"),
-)
 
-db = Mysql(
-    host=getenv("MYSQL_HOST"),
-    user=getenv("MYSQL_USER"),
-    password=getenv("MYSQL_PASSWORD"),
-    database=getenv("MYSQL_DATABASE"),
-)
+# storage = CloudStorage(
+#     project_id=getenv("GOOGLE_PROJECT_ID"),
+#     credentials_path=getenv("GOOGLE_APPLICATION_CREDENTIALS"),
+#     bucket_name=getenv("GOOGLE_STORAGE_BUCKET_NAME"),
+# )
 
-ml_model = Model()
+# db = Mysql(
+#     host=getenv("MYSQL_HOST"),
+#     user=getenv("MYSQL_USER"),
+#     password=getenv("MYSQL_PASSWORD"),
+#     database=getenv("MYSQL_DATABASE"),
+# )
+
+video = Video()
+
+# ml_model = Model()
 
 app = Flask(__name__)
 app.logger = get_logger()
@@ -45,17 +49,56 @@ def handle_connect(client, userdata, flags, rc):
         f"Connected to MQTT broker at {app.config['MQTT_BROKER_URL']}:{app.config['MQTT_BROKER_PORT']}"
     )
 
-    topic = "video/#"
+    topics = [
+        "stream/#",
+        "close_stream/#",
+    ]
 
-    mqtt_client.subscribe(topic)
-    app.logger.info(f"Subscribed to topic: {topic}")
+    for topic in topics:
+        mqtt_client.subscribe(topic)
+        app.logger.info(f"Subscribed to {topic}")
 
 
 @mqtt_client.on_message()
 def handle_message(client, userdata, message):
+    topic = message.topic
+    payload = message.payload
+
+    app.logger.info(f"Received message on topic {topic}")
+    app.logger.info(f"video_writer: {video.video_writer}, frames: {len(video.frames)}")
+
+    match topic:
+        case "stream":
+            process_frame(payload)
+        case "close_stream":
+            close_stream()
+
+
+def process_frame(payload):
     try:
-        message.payload.decode("utf-8")
-        ml_model.process_frame(message.payload)
+        payload.decode("utf-8")
+        img = video.convert_base64_to_img(payload)
+
+        # _, _, _, ... = ml_model.process_frame(img)
+
+        video.write_to_buffer(img)
+
+        # set alert, store to db, and upload to cloud storage
+
+    except Exception as e:
+        app.logger.error(e)
+        return
+
+
+def close_stream():
+    try:
+        if len(video.frames) == 0:
+            return
+
+        video.save_to_file()
+        video.release_video_writer()
+
+        app.logger.info("video saved to file")
 
     except Exception as e:
         app.logger.error(e)

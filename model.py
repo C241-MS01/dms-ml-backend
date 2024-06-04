@@ -1,9 +1,8 @@
-import time
-import base64
 import cv2
-from torch.hub import load
+import time
 import mediapipe as mp
 import numpy as np
+from torch.hub import load
 
 
 class Model:
@@ -59,15 +58,45 @@ class Model:
         self.ear_below_thresh_time = 0
         self.start_time = 0
 
-    def process_frame(self, string):
-        # convert base64 to image
-        img = self.convert_base64_to_image(string)
+    def process_frame(self, img):
         # resize the image frame
         img = cv2.resize(img, (self.width, self.height))
 
         # Detect object
         detection_result = self.model(img)
         print(detection_result)
+
+        detections = detection_result.xyxy[0]
+        print(detections)
+
+        if len(detections) > 0:
+            confidence = detections[:, 4].mean()
+            print("===" * 15)
+            print(confidence.item())
+        else:
+            confidence = 0
+            print(confidence)
+
+        for detection in enumerate(detections):
+            x1, y1, x2, y2, conf = detection
+            cv2.rectangle(
+                img,
+                (int(x1), int(y1)),
+                (int(x2), int(y2)),
+                (0, 255, 0),
+                2,
+            )
+
+            cv2.putText(
+                img,
+                text=f"{int(conf*100)}%",
+                org=(int(x1), int(y1) - 10),
+                fontFace=cv2.FONT_HERSHEY_SIMPLEX,
+                fontScale=0.5,
+                color=(0, 255, 0),
+                thickness=2,
+                lineType=cv2.LINE_AA,
+            )
 
         # Convert the BGR to RGB image
         img.flags.writeable = False
@@ -151,11 +180,6 @@ class Model:
                                 lineType=cv2.LINE_AA,
                             )
                             print("Driver is sleeping!")
-
-    def convert_base64_to_image(self, base64_string):
-        nparr = np.frombuffer(base64.b64decode(base64_string), np.uint8)
-        img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-        return img
 
     # --- Formula Eye Aspect Ratio (EAR) ---
 
