@@ -11,22 +11,22 @@ from video import Video
 load_dotenv()
 
 
-# storage = CloudStorage(
-#     project_id=getenv("GOOGLE_PROJECT_ID"),
-#     credentials_path=getenv("GOOGLE_APPLICATION_CREDENTIALS"),
-#     bucket_name=getenv("GOOGLE_STORAGE_BUCKET_NAME"),
-# )
+storage = CloudStorage(
+    project_id=getenv("GOOGLE_PROJECT_ID"),
+    credentials_path=getenv("GOOGLE_APPLICATION_CREDENTIALS"),
+    bucket_name=getenv("GOOGLE_STORAGE_BUCKET_NAME"),
+)
 
-# db = Mysql(
-#     host=getenv("MYSQL_HOST"),
-#     user=getenv("MYSQL_USER"),
-#     password=getenv("MYSQL_PASSWORD"),
-#     database=getenv("MYSQL_DATABASE"),
-# )
+db = Mysql(
+    host=getenv("MYSQL_HOST"),
+    user=getenv("MYSQL_USER"),
+    password=getenv("MYSQL_PASSWORD"),
+    database=getenv("MYSQL_DATABASE"),
+)
 
 video = Video()
 
-# ml_model = Model()
+ml_model = Model()
 
 app = Flask(__name__)
 app.logger = get_logger()
@@ -65,7 +65,7 @@ def handle_message(client, userdata, message):
     payload = message.payload
 
     app.logger.info(f"Received message on topic {topic}")
-    app.logger.info(f"video_writer: {video.video_writer}, frames: {len(video.frames)}")
+    app.logger.info(f"frames: {len(video.frames)}")
 
     match topic:
         case "stream":
@@ -76,14 +76,18 @@ def handle_message(client, userdata, message):
 
 def process_frame(payload):
     try:
+        # global last_detection_time
+
         payload.decode("utf-8")
         img = video.convert_base64_to_img(payload)
 
-        # _, _, _, ... = ml_model.process_frame(img)
+        # _, _, _, ... = ml_model.analyze(img)
 
-        video.write_to_buffer(img)
+        # if detected:
+        #     video.write_to_buffer(img)
+        #     mqtt_client.publish("alert", "drowsiness detected")
 
-        # set alert, store to db, and upload to cloud storage
+        video.write_to_buffer(img)  # temporary
 
     except Exception as e:
         app.logger.error(e)
@@ -91,14 +95,22 @@ def process_frame(payload):
 
 
 def close_stream():
+    # temporary
     try:
         if len(video.frames) == 0:
             return
 
-        video.save_to_file()
+        filename = video.save_to_file()
         video.release_video_writer()
 
         app.logger.info("video saved to file")
+
+        # store to db, and upload to cloud storage
+
+        # storage.upload(filename, "videos")
+        # db.cursor.execute(
+        #     "INSERT INTO detection_history (video_url) VALUES (%s)", (filename)
+        # )
 
     except Exception as e:
         app.logger.error(e)

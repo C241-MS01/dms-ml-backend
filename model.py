@@ -58,7 +58,7 @@ class Model:
         self.ear_below_thresh_time = 0
         self.start_time = 0
 
-    def process_frame(self, img):
+    def analyze(self, img):
         # resize the image frame
         img = cv2.resize(img, (self.width, self.height))
 
