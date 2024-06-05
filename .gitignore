@@ -5,6 +5,7 @@
 # Development-specific files
 __pycache__
 .venv
+tmp
 *.log
 *.env
 

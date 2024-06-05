@@ -7,8 +7,14 @@ import os
 
 class Video:
     def __init__(self):
+        if not os.path.exists("./tmp"):
+            os.makedirs("./tmp")
+
         self.video_writer = None
         self.video_filename = None
+        self.video_fourcc = cv2.VideoWriter_fourcc(*"MJPG")
+        self.video_fps = 15.0
+        self.video_size = (640, 480)
         self.frames = list()
 
     def convert_base64_to_img(self, payload):
@@ -20,13 +26,13 @@ class Video:
         self.frames.append(img)
 
     def save_to_file(self) -> str:
-        self.video_filename = f"{uuid.uuid4()}.avi"
-        video_fourcc = cv2.VideoWriter_fourcc(*"MJPG")
-        video_fps = 15.0
-        video_size = (640, 480)
+        self.video_filename = f"./tmp/{uuid.uuid4()}.avi"
 
         self.video_writer = cv2.VideoWriter(
-            self.video_filename, video_fourcc, video_fps, video_size
+            self.video_filename,
+            self.video_fourcc,
+            self.video_fps,
+            self.video_size,
         )
 
         for frame in self.frames:

@@ -81,9 +81,9 @@ def process_frame(payload):
         payload.decode("utf-8")
         img = video.convert_base64_to_img(payload)
 
-        # _, _, _, ... = ml_model.analyze(img)
+        # left_ear, right_ear, mar, analyzed_img, detected_object, ... = ml_model.analyze(img)
 
-        # if detected:
+        # if detected_object:
         #     video.write_to_buffer(img)
         #     mqtt_client.publish("alert", "drowsiness detected")
 
