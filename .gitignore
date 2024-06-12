@@ -11,3 +11,6 @@ tmp
 
 # GCP-specific files
 service-account.json
+
+# Pytorch-specific files
+*.pt

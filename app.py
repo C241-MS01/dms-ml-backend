@@ -26,7 +26,7 @@ db = Mysql(
 
 video = Video()
 
-ml_model = Model()
+ml_model = Model(getenv("MODEL_PATH"))
 
 app = Flask(__name__)
 app.logger = get_logger()
@@ -46,11 +46,13 @@ def handle_connect(client, userdata, flags, rc):
         return
 
     app.logger.info(
-        f"Connected to MQTT broker at {app.config['MQTT_BROKER_URL']}:{app.config['MQTT_BROKER_PORT']}"
+        f"Connected to MQTT broker at {app.config['MQTT_BROKER_URL']}:{
+            app.config['MQTT_BROKER_PORT']}"
     )
 
     topics = [
         "stream/#",
+        "open_stream/#",
         "close_stream/#",
     ]
 
@@ -61,33 +63,60 @@ def handle_connect(client, userdata, flags, rc):
 
 @mqtt_client.on_message()
 def handle_message(client, userdata, message):
-    topic = message.topic
-    payload = message.payload
+    try:
+        topic = message.topic
+        payload = message.payload
 
-    app.logger.info(f"Received message on topic {topic}")
-    app.logger.info(f"frames: {len(video.frames)}")
-
-    match topic:
-        case "stream":
-            process_frame(payload)
-        case "close_stream":
+        if topic.startswith("open_stream"):
+            open_stream(payload)
+        elif topic.startswith("stream"):
+            process_img(payload)
+        elif topic.startswith("close_stream"):
             close_stream()
 
+    except Exception as e:
+        app.logger.error(e)
+        return
 
-def process_frame(payload):
+
+def open_stream(vehicle_id):
     try:
-        # global last_detection_time
+        db.cursor.execute(
+            "SELECT id FROM vehicles WHERE id = %s", (vehicle_id,))
+        vehicle = db.cursor.fetchone()
 
-        payload.decode("utf-8")
-        img = video.convert_base64_to_img(payload)
+        if not vehicle:
+            db.cursor.execute(
+                "INSERT INTO vehicles (id) VALUES (%s)", (vehicle_id,))
+            db.connection.commit()
+            app.logger.info(f"Vehicle {vehicle_id} added to database")
+            return
 
-        # left_ear, right_ear, mar, analyzed_img, detected_object, ... = ml_model.analyze(img)
+        db.connection.commit()
+        app.logger.info(f"Vehicle {vehicle_id} already exists in database")
 
-        # if detected_object:
-        #     video.write_to_buffer(img)
-        #     mqtt_client.publish("alert", "drowsiness detected")
+    except Exception as e:
+        app.logger.error(e)
+        return
 
-        video.write_to_buffer(img)  # temporary
+
+def process_img(payload):
+    try:
+        decoded_img, object_detected, face_detection_results = ml_model.analyze(payload)
+
+        if any(value for value in object_detected.values()) or face_detection_results:
+            app.logger.info(f"Object detected: {object_detected}")
+            app.logger.info(f"Face detection results: {
+                            face_detection_results}")
+
+            for key, value in object_detected.items():
+                if value:
+                    mqtt_client.publish("alert", f"{key} detected")
+
+            if face_detection_results:
+                mqtt_client.publish("alert", "drowsiness detected")
+
+            video.write_to_buffer(decoded_img)
 
     except Exception as e:
         app.logger.error(e)
@@ -98,12 +127,14 @@ def close_stream():
     # temporary
     try:
         if len(video.frames) == 0:
+            app.logger.info("no frames to compile")
             return
 
-        filename = video.save_to_file()
-        video.release_video_writer()
+        app.logger.info(f"compiling {len(video.frames)} frames into video")
 
-        app.logger.info("video saved to file")
+        filename = video.save_to_file()
+
+        app.logger.info(f"video saved to {filename}")
 
         # store to db, and upload to cloud storage
 

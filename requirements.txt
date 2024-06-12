@@ -3,6 +3,8 @@ Flask==3.0.3
 Flask-MQTT==1.2.1
 google-auth==2.29.0
 google-cloud-storage==2.16.0
+imageio==2.34.1
+imageio-ffmpeg==0.5.1
 mediapipe==0.10.14
 mysql-connector-python==8.4.0
 numpy==1.26.4
