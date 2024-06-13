@@ -11,11 +11,13 @@
 <body>
 	<video id="webcam" autoplay></video>
 	<button id="play">Play</button>
+	<button id="stop">Stop</button>
 </body>
 
 <script>
 	const client = mqtt.connect("ws://34.101.43.219:9001");
 	const streamId = "40e4fe42-c6a9-48e0-8745-461380e2ae5d";
+	const intervalId = null;
 	let stream;
 
 	client.on("connect", () => {
@@ -23,6 +25,7 @@
 	});
 
 	function startVideo() {
+		client.publish("open_stream", streamId); // publish the stream id to notify the server to check the stream id in the database
 		navigator.mediaDevices
 			.getUserMedia({ video: { width: 640, height: 480 } })
 			.then((stream) => {
@@ -31,8 +34,7 @@
 				const canvas = document.createElement("canvas");
 				const context = canvas.getContext("2d");
 				video.addEventListener("play", () => {
-					client.publish("open_stream", streamId); // publish the stream id to notify the server to check the stream id in the database
-					setInterval(() => {
+					intervalId = setInterval(() => {
 						canvas.width = video.videoWidth;
 						canvas.height = video.videoHeight;
 						context.drawImage(
@@ -53,7 +55,20 @@
 				console.error("Error accessing webcam:", error);
 			});
 	}
+
+	function stopVideo() {
+		if (intervalId) {
+			clearInterval(intervalId);
+		}
+
+		const video = document.getElementById("webcam");
+		video.srcObject.getTracks().forEach((track) => track.stop());
+		video.srcObject = null;
+		client.publish("close_stream", streamId); // publish the stream id to notify the server to remove the stream id in the database
+	}
+
 	document.getElementById("play").addEventListener("click", startVideo);
+	document.getElementById("stop").addEventListener("click", stopVideo);
 </script>
 
 </html>

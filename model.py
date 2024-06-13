@@ -25,6 +25,9 @@ class Model:
             "vape",
         ]
 
+        # tracking detection
+        self.detections = {}
+
         # --- Drawing and Create Face Mesh on Face ---
         self.mp_draw = mp.solutions.drawing_utils
         self.mp_face_mesh = mp.solutions.face_mesh
@@ -95,7 +98,9 @@ class Model:
             coords_points = []
             for i in refer_idxs:
                 lm = landmarks[i]
-                coord = self.denormalize_coordinates(lm.x, lm.y, img_width, img_height)
+                coord = self.denormalize_coordinates(
+                    lm.x, lm.y, img_width, img_height
+                )
                 coords_points.append(coord)
 
             # eye landmark (x, y) coordinates
@@ -118,7 +123,8 @@ class Model:
             coords_points = []
             for i in refer_idxs:
                 lm = landmarks[i]
-                coord = self.denormalize_coordinates(lm.x, lm.y, image_w, image_h)
+                coord = self.denormalize_coordinates(
+                    lm.x, lm.y, image_w, image_h)
                 coords_points.append(coord)
 
             P2_P8 = self.distance(coords_points[1], coords_points[7])
@@ -343,7 +349,10 @@ class Model:
                     img_w,
                     img_h,
                 )
-                MAR, _ = self.calculate_mar(landmarks, self.lips_idxs, img_w, img_h)
+
+                MAR, _ = self.calculate_mar(
+                    landmarks, self.lips_idxs, img_w, img_h
+                )
 
                 sleep_duration, sleep_condition = self.detect_sleeping(
                     EAR, self.ear_thresh, self.ear_time_thresh, img
@@ -418,7 +427,8 @@ class Model:
 
         fps = int(1 / (time.perf_counter() - self.start_time))
         cv2.putText(
-            img, f"FPS: {fps}", (15, 80), cv2.FONT_HERSHEY_PLAIN, 3, (0, 255, 0), 2
+            img,
+            f"FPS: {fps}", (15, 80), cv2.FONT_HERSHEY_PLAIN, 3, (0, 255, 0), 2
         )
 
         return face_detection_results
@@ -466,7 +476,9 @@ class Model:
         io_buf = io.BytesIO(buffer)
 
         # decode
-        decoded_img = cv2.imdecode(np.frombuffer(io_buf.getbuffer(), np.uint8), -1)
+        decoded_img = cv2.imdecode(np.frombuffer(
+            io_buf.getbuffer(), np.uint8), -1
+        )
 
         return decoded_img, object_detected
 

@@ -15,6 +15,6 @@ class CloudStorage:
 
     def upload(self, content, destination) -> str:
         blob = self.bucket.blob(destination)
-        blob.upload_from_string(content)
+        blob.upload_from_filename(content)
         blob.make_public()
         return blob.public_url

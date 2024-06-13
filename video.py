@@ -11,21 +11,21 @@ class Video:
 
         self.filename = None
         self.fps = 10
-        self.frames = list()
+        self.frames = {}
 
-    def write_to_buffer(self, img):
-        self.frames.append(img)
+    def write_to_buffer(self, key, img):
+        self.frames[key].append(img)
 
-    def save_to_file(self) -> str:
-        self.filename = f"./tmp/{uuid.uuid4()}.mp4"
+    def save_to_file(self, key) -> str:
+        self.filename = f"./tmp/{key}-{uuid.uuid4()}.mp4"
 
         w = iio.get_writer(uri=self.filename, fps=self.fps, codec="libx264")
 
-        for frame in self.frames:
+        for frame in self.frames[key]:
             w.append_data(frame)
 
         w.close()
 
-        self.frames = list()
+        del self.frames[key]
 
         return self.filename
