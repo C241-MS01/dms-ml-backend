@@ -101,9 +101,9 @@ def open_stream(vehicle_uuid):
 
     db.cursor.execute(
         "SELECT EXISTS(SELECT 1 FROM vehicles WHERE uuid = %s)", (vehicle_uuid,))
-    vehicle = db.cursor.fetchone()
+    vehicle = db.cursor.fetchone()[0]
 
-    if vehicle[0] == 0:
+    if not vehicle:
         app.logger.info(
             f"[open_stream] {vehicle_uuid}: adding vehicle to database"
         )
@@ -131,7 +131,7 @@ def process_img(vehicle_uuid, payload):
         payload
     )
 
-    if any(value for value in object_detected.values()) or face_detection_results:
+    if any(value for value in object_detected.values()) or face_detection_results["ear"] != 0:
         for key, value in object_detected.items():
             if value:
                 mqtt_client.publish(f"alert/{vehicle_uuid}", f"{key}")
@@ -160,21 +160,33 @@ def close_stream(vehicle_uuid):
     )
 
     video_url = storage.upload(
-        filename, f"{datetime.date.today()}/{vehicle_uuid}")
+        filename,
+        f"{datetime.date.today()}/{vehicle_uuid}-{str(uuid.uuid4())}.mp4"
+    )
 
     app.logger.info(
         f"[close_stream] {vehicle_uuid}: video uploaded to {video_url}"
     )
 
     db.cursor.execute(
-        "INSERT INTO videos (vehicle_uuid, uuid, url) VALUES (%s, %s, %s)",
-        (vehicle_uuid, str(uuid.uuid4()), video_url),
+        "SELECT id FROM vehicles WHERE uuid = %s", (vehicle_uuid,)
+    )
+    vehicle_id = db.cursor.fetchone()[0]
+
+    if not vehicle_id:
+        app.logger.error(
+            f"[close_stream] {vehicle_uuid}: vehicle id not found"
+        )
+        return
+
+    db.cursor.execute(
+        "INSERT INTO videos (vehicle_id, uuid, url) VALUES (%s, %s, %s)",
+        (vehicle_id, str(uuid.uuid4()), video_url),
     )
     video_id = db.cursor.lastrowid
-    db.connection.commit()
 
     for detection in ml_model.detections[vehicle_uuid]:
-        if not detection["face_detection_results"]:
+        if not any(value for value in detection["object_detected"].values()) and not detection["face_detection_results"]["ear"]:
             continue
 
         db.cursor.execute(
@@ -191,20 +203,25 @@ def close_stream(vehicle_uuid):
             ),
         )
         alerts_id = db.cursor.lastrowid
-        db.connection.commit()
 
         if detection["object_detected"]:
             detected_str = ""
             for key, value in detection["object_detected"].items():
                 if value:
                     detected_str += f"{key}, "
-            detected_str = detected_str[:-2]
+
+            match detected_str:
+                case "":
+                    detected_str = None
+                case _:
+                    detected_str = detected_str[:-2]
 
             db.cursor.execute(
                 "UPDATE alerts SET object_detected = %s WHERE id = %s",
                 (detected_str, alerts_id),
             )
-            db.connection.commit()
+
+    db.connection.commit()
 
     if vehicle_uuid in video.frames:
         del video.frames[vehicle_uuid]
@@ -218,12 +235,12 @@ def close_stream(vehicle_uuid):
     app.logger.info(f"[close_stream] {vehicle_uuid}: stream closed")
 
 
-@app.route("/")
+@ app.route("/")
 def index():
     return render_template("index.html")
 
 
-@app.route("/stream")
+@ app.route("/stream")
 def stream():
     return render_template("streamer.html")
 

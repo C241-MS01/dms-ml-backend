@@ -324,7 +324,14 @@ class Model:
 
     # Mediapipe Face Mesh
     def detect_face_mesh(self, img):
-        face_detection_results = None
+        face_detection_results = {
+            "time": datetime.datetime.now().isoformat(),
+            "ear": 0,
+            "mar":  0,
+            "sleep_duration": 0,
+            "yawning_duration": 0,
+            "focus_duration": 0,
+        }
 
         # resize the video
         img = cv2.resize(img, (self.width, self.height))
