@@ -1,3 +1,4 @@
+import base64
 import datetime
 import os
 import uuid
@@ -124,14 +125,17 @@ def process_img(vehicle_uuid, payload):
         return
 
     if vehicle_uuid not in video.frames:
-        app.logger.info(f"[stream] {vehicle_uuid}: stream not open")
         return
+
+    mqtt_client.publish(
+        f"stream/base64/{vehicle_uuid}", base64.b64encode(payload)
+    )
 
     decoded_img, object_detected, face_detection_results = ml_model.analyze(
         payload
     )
 
-    if any(value for value in object_detected.values()) or face_detection_results["ear"] != 0:
+    if (any(value is True for value in object_detected.values()) or face_detection_results["ear"] != 0):
         for key, value in object_detected.items():
             if value:
                 mqtt_client.publish(f"alert/{vehicle_uuid}", f"{key}")
@@ -147,6 +151,12 @@ def process_img(vehicle_uuid, payload):
 
 
 def close_stream(vehicle_uuid):
+    if vehicle_uuid not in video.frames:
+        app.logger.info(
+            f"[close_stream] {vehicle_uuid}: stream already closed"
+        )
+        return
+
     if len(video.frames[vehicle_uuid]) == 0:
         app.logger.info(f"[close_stream] {vehicle_uuid}: no frames to compile")
         return
@@ -185,8 +195,8 @@ def close_stream(vehicle_uuid):
     )
     video_id = db.cursor.lastrowid
 
-    for detection in ml_model.detections[vehicle_uuid]:
-        if not any(value for value in detection["object_detected"].values()) and not detection["face_detection_results"]["ear"]:
+    for detections in ml_model.detections[vehicle_uuid]:
+        if all(value is False for value in detections["object_detected"].values()) and detections["face_detection_results"]["ear"] == 0:
             continue
 
         db.cursor.execute(
@@ -194,19 +204,19 @@ def close_stream(vehicle_uuid):
             (
                 video_id,
                 str(uuid.uuid4()),
-                detection["face_detection_results"]["ear"],
-                detection["face_detection_results"]["mar"],
-                detection["face_detection_results"]["sleep_duration"],
-                detection["face_detection_results"]["yawning_duration"],
-                detection["face_detection_results"]["focus_duration"],
-                detection["face_detection_results"]["time"],
+                detections["face_detection_results"]["ear"],
+                detections["face_detection_results"]["mar"],
+                detections["face_detection_results"]["sleep_duration"],
+                detections["face_detection_results"]["yawning_duration"],
+                detections["face_detection_results"]["focus_duration"],
+                detections["face_detection_results"]["time"],
             ),
         )
         alerts_id = db.cursor.lastrowid
 
-        if detection["object_detected"]:
+        if detections["object_detected"]:
             detected_str = ""
-            for key, value in detection["object_detected"].items():
+            for key, value in detections["object_detected"].items():
                 if value:
                     detected_str += f"{key}, "
 

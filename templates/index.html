@@ -18,7 +18,7 @@
 	const streamId = "40e4fe42-c6a9-48e0-8745-461380e2ae5d";
 	client.on("connect", () => {
 		console.log("connected");
-		client.subscribe(`stream/${streamId}`, (err) => {
+		client.subscribe(`stream/base64/${streamId}`, (err) => {
 			if (err) {
 				console.error("Failed to subscribe to topic:", err);
 				return;

@@ -1,4 +1,3 @@
-import base64
 import datetime
 import io
 import time
@@ -489,14 +488,8 @@ class Model:
 
         return decoded_img, object_detected
 
-    def convert_base64_to_img(self, payload):
-        nparr = np.frombuffer(base64.b64decode(payload), np.uint8)
-        img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-        return img
-
     def analyze(self, payload):
-        # Convert base64 to img
-        img = self.convert_base64_to_img(payload)
+        img = cv2.imdecode(np.frombuffer(payload, np.uint8), cv2.IMREAD_COLOR)
 
         # Detect drowsiness, yawning, and head focus
         face_detection_results = self.detect_face_mesh(img)

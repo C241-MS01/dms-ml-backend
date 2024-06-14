@@ -46,8 +46,9 @@
 						);
 						const data = canvas.toDataURL("image/jpeg");
 						const base64 = data.split(",")[1];
-						client.publish(`stream/${streamId}`, base64); // publish the base64 image to the server
-						console.log(`published ${base64.length} bytes`);
+						const buffer = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+						client.publish(`stream/${streamId}`, buffer); // publish the image buffer to the server
+						console.log(`published ${buffer.length} bytes`);
 					}, 1000 / 15); // Change the interval to achieve 15fps
 				});
 			})
@@ -62,8 +63,14 @@
 		}
 
 		const video = document.getElementById("webcam");
+
+		if (!video.srcObject) {
+			return;
+		}
+
 		video.srcObject.getTracks().forEach((track) => track.stop());
 		video.srcObject = null;
+
 		client.publish("close_stream", streamId); // publish the stream id to notify the server to remove the stream id in the database
 	}
 
