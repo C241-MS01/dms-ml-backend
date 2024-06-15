@@ -1,0 +1,33 @@
+# IDE-specific files
+.devcontainer
+.vscode
+.idea
+
+# Development-specific files
+__pycache__
+.venv
+tmp
+*.log
+*.env
+*.env.*
+
+# Version control files
+.git
+.gitignore
+
+# CI files
+.github
+.gitlab-ci.yaml
+
+# Docker files
+Dockerfile*
+*compose*.yaml
+
+# Configuration files
+.*ignore
+*.pt
+service-account.json
+
+# Documentation files
+LICENSE
+*.md
