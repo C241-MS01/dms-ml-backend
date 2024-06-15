@@ -4,9 +4,12 @@ from google.oauth2 import service_account
 
 class CloudStorage:
     def __init__(self, project_id, credentials_path, bucket_name):
-        credentials = service_account.Credentials.from_service_account_file(
-            credentials_path
-        )
+        credentials = None
+        if credentials_path:
+            credentials = service_account.Credentials.from_service_account_file(
+                credentials_path
+            )
+
         self.client = storage.Client(
             project=project_id,
             credentials=credentials,
