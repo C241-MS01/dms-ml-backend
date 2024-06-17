@@ -124,16 +124,12 @@ def process_img(vehicle_uuid, payload):
     if vehicle_uuid is None:
         return
 
-    if vehicle_uuid not in video.frames:
+    if vehicle_uuid not in video.frames and vehicle_uuid not in ml_model.detections:
         return
 
-    mqtt_client.publish(
-        f"stream/base64/{vehicle_uuid}", base64.b64encode(payload)
-    )
+    mqtt_client.publish(f"stream/base64/{vehicle_uuid}", base64.b64encode(payload))
 
-    decoded_img, object_detected, face_detection_results = ml_model.analyze(
-        payload
-    )
+    decoded_img, object_detected, face_detection_results = ml_model.analyze(payload)
 
     if (any(value is True for value in object_detected.values()) or face_detection_results["ear"] != 0):
         for key, value in object_detected.items():
@@ -169,7 +165,7 @@ def close_stream(vehicle_uuid):
         app.logger.info(f"[close_stream] {vehicle_uuid}: stream closed")
         return
 
-    app.logger.info(f"[close_stream] {vehicle_uuid}: closing stream")
+    app.logger.info(f"[close_stream] {vehicle_uuid}: saving video")
 
     filename = video.save_to_file(vehicle_uuid)
 
@@ -185,6 +181,8 @@ def close_stream(vehicle_uuid):
     app.logger.info(
         f"[close_stream] {vehicle_uuid}: video uploaded to {video_url}"
     )
+
+    app.logger.info(f"[close_stream] {vehicle_uuid}: saving video & telemetry to database")
 
     db.cursor.execute(
         "SELECT id FROM vehicles WHERE uuid = %s", (vehicle_uuid,)
@@ -240,6 +238,8 @@ def close_stream(vehicle_uuid):
             )
 
     db.connection.commit()
+
+    app.logger.info(f"[close_stream] {vehicle_uuid}: video & telemetry saved to database")
 
     if vehicle_uuid in video.frames:
         del video.frames[vehicle_uuid]
