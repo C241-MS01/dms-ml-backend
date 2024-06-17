@@ -159,6 +159,14 @@ def close_stream(vehicle_uuid):
 
     if len(video.frames[vehicle_uuid]) == 0:
         app.logger.info(f"[close_stream] {vehicle_uuid}: no frames to compile")
+
+        if vehicle_uuid in video.frames:
+            del video.frames[vehicle_uuid]
+
+        if vehicle_uuid in ml_model.detections:
+            del ml_model.detections[vehicle_uuid]
+
+        app.logger.info(f"[close_stream] {vehicle_uuid}: stream closed")
         return
 
     app.logger.info(f"[close_stream] {vehicle_uuid}: closing stream")
