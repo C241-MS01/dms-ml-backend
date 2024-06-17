@@ -5,7 +5,7 @@ import uuid
 from cloud_storage import CloudStorage
 from db import Mysql
 from dotenv import load_dotenv
-from flask import Flask, render_template
+from flask import Flask
 from flask_mqtt import Mqtt
 from model import Model
 from structlog import get_logger
@@ -253,21 +253,10 @@ def close_stream(vehicle_uuid):
     app.logger.info(f"[close_stream] {vehicle_uuid}: stream closed")
 
 
-@ app.route("/")
-def index():
-    return render_template("index.html")
-
-
-@ app.route("/stream")
-def stream():
-    return render_template("streamer.html")
-
-
 def main():
     app.run(
         host=app.config["HTTP_URL"],
         port=app.config["HTTP_PORT"],
-        # debug=True,
     )
 
 
