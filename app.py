@@ -100,20 +100,26 @@ def open_stream(vehicle_uuid):
     video.frames[vehicle_uuid] = list()
     ml_model.detections[vehicle_uuid] = list()
 
-    db.cursor.execute(
-        "SELECT EXISTS(SELECT 1 FROM vehicles WHERE uuid = %s)", (vehicle_uuid,))
-    vehicle = db.cursor.fetchone()[0]
+    conn = db.get_connection()
+    cursor = conn.cursor(buffered=True)
+
+    cursor.execute(
+        "SELECT EXISTS(SELECT 1 FROM vehicles WHERE uuid = %s)", (vehicle_uuid,)
+    )
+    vehicle = cursor.fetchone()[0]
 
     if not vehicle:
         app.logger.info(
             f"[open_stream] {vehicle_uuid}: adding vehicle to database"
         )
-        db.cursor.execute(
+        cursor.execute(
             "INSERT INTO vehicles (uuid) VALUES (%s)", (vehicle_uuid,)
         )
-        db.connection.commit()
+        conn.commit()
         return
-    db.connection.commit()
+
+    conn.commit()
+    conn.close()
 
     app.logger.info(
         f"[open_stream] {vehicle_uuid}: vehicle already exists in database"
@@ -184,10 +190,13 @@ def close_stream(vehicle_uuid):
 
     app.logger.info(f"[close_stream] {vehicle_uuid}: saving video & telemetry to database")
 
-    db.cursor.execute(
+    conn = db.get_connection()
+    cursor = conn.cursor(buffered=True)
+
+    cursor.execute(
         "SELECT id FROM vehicles WHERE uuid = %s", (vehicle_uuid,)
     )
-    vehicle_id = db.cursor.fetchone()[0]
+    vehicle_id = cursor.fetchone()[0]
 
     if not vehicle_id:
         app.logger.error(
@@ -195,17 +204,17 @@ def close_stream(vehicle_uuid):
         )
         return
 
-    db.cursor.execute(
+    cursor.execute(
         "INSERT INTO videos (vehicle_id, uuid, url) VALUES (%s, %s, %s)",
         (vehicle_id, str(uuid.uuid4()), video_url),
     )
-    video_id = db.cursor.lastrowid
+    video_id = cursor.lastrowid
 
     for detections in ml_model.detections[vehicle_uuid]:
         if all(value is False for value in detections["object_detected"].values()) and detections["face_detection_results"]["ear"] == 0:
             continue
 
-        db.cursor.execute(
+        cursor.execute(
             "INSERT INTO alerts (video_id, uuid, ear, mar, sleep_duration, yawning_duration, focus_duration, time) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
             (
                 video_id,
@@ -218,7 +227,7 @@ def close_stream(vehicle_uuid):
                 detections["face_detection_results"]["time"],
             ),
         )
-        alerts_id = db.cursor.lastrowid
+        alerts_id = cursor.lastrowid
 
         if detections["object_detected"]:
             detected_str = ""
@@ -232,12 +241,13 @@ def close_stream(vehicle_uuid):
                 case _:
                     detected_str = detected_str[:-2]
 
-            db.cursor.execute(
+            cursor.execute(
                 "UPDATE alerts SET object_detected = %s WHERE id = %s",
                 (detected_str, alerts_id),
             )
 
-    db.connection.commit()
+    conn.commit()
+    conn.close()
 
     app.logger.info(f"[close_stream] {vehicle_uuid}: video & telemetry saved to database")
 
