@@ -21,7 +21,7 @@ The application subscribes to the following MQTT topics:
 
 - `stream/#`:
   - Identifies the vehicle UUID from the subtopic.
-  - Converts the buffer images to base64 strings for live streaming (published to stream/base64/{UUID}).
+  - Converts the buffer images to base64 strings for live streaming (published to `base64/{UUID}` topic).
   - Feeds the images to the ML model for processing.
   - If distractions or objects are detected, efficiently appends the frames and metrics to the corresponding in-memory lists.
 
