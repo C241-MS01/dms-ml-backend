@@ -133,7 +133,7 @@ def process_img(vehicle_uuid, payload):
     if vehicle_uuid not in video.frames and vehicle_uuid not in ml_model.detections:
         return
 
-    mqtt_client.publish(f"stream/base64/{vehicle_uuid}", base64.b64encode(payload))
+    mqtt_client.publish(f"base64/{vehicle_uuid}", base64.b64encode(payload))
 
     decoded_img, object_detected, face_detection_results = ml_model.analyze(payload)
 
